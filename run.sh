@@ -27,7 +27,12 @@ fi
 
 binary="$kernel-C$cores"
 
-sbatch_folder="sbatch"
+# experiment_name="problem1_v1_i0"
+# experiment_name="problem1_v1_i1"
+# experiment_name="problem1_v2_i0"
+experiment_name="problem1_v2_i1"
+sbatch_folder="sbatch/$experiment_name"
+
 out_folder="logs"
 mkdir -p $sbatch_folder
 mkdir -p $out_folder
@@ -39,12 +44,12 @@ echo "#SBATCH --nodes=1"                >> batch.sh
 echo "#SBATCH --ntasks=1"               >> batch.sh          # total number of tasks across all nodes
 echo "#SBATCH --time=00:09:00"          >> batch.sh
 echo "#SBATCH --output=$sbatch_folder/$slurm_file" >> batch.sh
-echo "#SBATCH --mem-per-cpu=16G" >> batch.sh
+echo "#SBATCH --mem-per-cpu=5G" >> batch.sh
 echo "#SBATCH --cpus-per-task=$cores"   >> batch.sh
 echo "#SBATCH --job-name=$binary" >> batch.sh
 echo "#SBATCH --distribution=block:block" >> batch.sh
 echo "#SBATCH --constraint=skylake" >> batch.sh			# using the skylake CPUs
-echo "#SBATCH -p class" >> batch.sh				# using the class partition 
+echo "#SBATCH -p medium" >> batch.sh				# using the class partition 
 
 cmd="./$dir/$kernel $kernel_opt 2> $out_file"
 
@@ -52,3 +57,4 @@ echo $cmd >> batch.sh;
 sbatch batch.sh;
 name=`whoami`
 squeue -u $name --format="%.18i %.9P %.50j %.8u %.2t %.10M %.6D %R"
+# ./run.sh prog1_mandelbrot_threads mandelbrot 2 "-t 2 -i 1 -v 2"

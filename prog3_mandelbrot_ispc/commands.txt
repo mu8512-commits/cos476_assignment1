@@ -1,0 +1,3 @@
+./mandelbrot_ispc --view 1
+
+./mandelbrot_ispc --view 1 --tasks

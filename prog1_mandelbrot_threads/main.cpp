@@ -31,7 +31,6 @@ scaleAndShift(float& x0, float& x1, float& y0, float& y1,
               float scale,
               float shiftX, float shiftY)
 {
-
     x0 *= scale;
     x1 *= scale;
     y0 *= scale;
@@ -40,7 +39,6 @@ scaleAndShift(float& x0, float& x1, float& y0, float& y1,
     x1 += shiftX;
     y0 += shiftY;
     y1 += shiftY;
-
 }
 
 void usage(const char* progname) {

@@ -1,5 +1,5 @@
 // Define vector unit width here
-#define VECTOR_WIDTH 2
+#define VECTOR_WIDTH 5
 
 #ifndef prog2_INTRIN_H_
 #define prog2_INTRIN_H_

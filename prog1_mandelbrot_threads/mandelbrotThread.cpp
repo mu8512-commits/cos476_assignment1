@@ -23,21 +23,32 @@ extern void mandelbrotSerial(
     int maxIterations,
     int output[]);
 
-//
-// workerThreadStart --
-//
-// Thread entrypoint.
+
 void workerThreadStart_v1(WorkerArgs * const args) {
 
     double startTime = CycleTimer::currentSeconds();
 
-    // TODO FOR ECE476 STUDENTS: Implement the body of the worker
-    // thread here. Each thread should make a call to mandelbrotSerial()
-    // to compute a part of the output image. For example, in a
-    // program that uses two threads, thread 0 could compute the top
-    // half of the image and thread 1 could compute the bottom half.
+    const int tid = args->threadId;
+    const int nt  = args->numThreads;
+    const int H   = (int)args->height;
 
-    printf("Hello! This is Mandelbrot implementation 1 from thread %d.", args->threadId);
+    const int block = H / nt;          // floor
+    int startRow = tid * block;
+    int numRows  = block;
+
+    // Last thread takes the remainder
+    if (tid == nt - 1) {
+        numRows = H - startRow;
+    }
+
+    // Optional safety: if more threads than rows, some threads do nothing
+    if (numRows <= 0) return;
+
+    mandelbrotSerial(args->x0, args->y0, args->x1, args->y1,
+                     (int)args->width, (int)args->height,
+                     startRow, numRows,
+                     args->maxIterations,
+                     args->output);
 }
 
 //
@@ -48,13 +59,26 @@ void workerThreadStart_v2(WorkerArgs * const args) {
 
     double startTime = CycleTimer::currentSeconds();
 
-    // TODO FOR ECE476 STUDENTS: Implement the body of the worker
-    // thread here. Each thread should make a call to mandelbrotSerial()
-    // to compute a part of the output image. For example, in a
-    // program that uses two threads, thread 0 could compute the top
-    // half of the image and thread 1 could compute the bottom half.
+    const int tid = args->threadId;
+    const int nt  = args->numThreads;
+    const int H   = (int)args->height;
 
-    printf("Hello! This is Mandelbrot implementation 2 from thread %d.", args->threadId);
+    // Tune this: smaller => better balance, more overhead.
+    // Start with 1 or 2 for Mandelbrot rows.
+    const int CHUNK = 1;
+
+    for (int startRow = tid * CHUNK; startRow < H; startRow += nt * CHUNK) {
+
+        int numRows = CHUNK;
+        if (startRow + numRows > H) numRows = H - startRow;
+        if (numRows <= 0) break;
+
+        mandelbrotSerial(args->x0, args->y0, args->x1, args->y1,
+                         (int)args->width, (int)args->height,
+                         startRow, numRows,
+                         args->maxIterations,
+                         args->output);
+    }
 }
 
 //
