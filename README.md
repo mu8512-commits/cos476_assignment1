@@ -70,7 +70,13 @@ git push --set-upstream origin main
 ```
 By doing this you manually created a fork of the release repository, renamed the original remote to "release", and marked your own remote repository as the upstream. The reason we are not forking GitHub web interface is because a GitHub fork does not allow you to change repository visibility, but your fork needs to be private.
 
-4. The assignment has multiple parts. In order to run each part, you have been provided a Makefile within each directory. To build a program,
+5. If your partner setup the repository and shared it to you, you should set up your local repo (on Adroit) like this.
+```shell
+git clone git@github.com:<THEIR-GITHUB-NAME>/<THEIR-REPO-NAME>.git
+git remote add release https://github.com/princeton-ece476/assignment1
+```
+
+6. The assignment has multiple parts. In order to run each part, you have been provided a Makefile within each directory. To build a program,
 
 ```bash
 cd <dir>
@@ -91,7 +97,9 @@ Once you build the program, you can submit the SLURM jobs for the execution usin
 ./run.sh prog1_mandelbrot_threads mandelbrot 2 "-t 2 -i 0"
 ```
 
-The `run.sh` script generates (or overwrites) `batch.sh` under the same directory, then submits this job to the cluster using `sbatch batch.sh`. The `run.sh`-generated script does not add `--exclusive` though - It is not recommended to use `--exclusive` when debugging, only when preparing for final submission. Once you are happy with your program, add `#SBATCH --exclusive` to `batch.sh` and submit it manually with `sbatch batch.sh` to get the most accurate numbers.
+The `run.sh` script generates (or overwrites) `batch.sh` under the same directory, then submits this job to the cluster using `sbatch batch.sh`. You should take a look at `batch.sh` - There are plenty of cases where you will want to modify it yourself. You can manually submit a batch job with `sbatch batch.sh`.
+
+The `run.sh`-generated script does not add `--exclusive` - It is not recommended to use `--exclusive` when debugging, only when preparing for final submission. Once you are happy with your program, add `#SBATCH --exclusive` to `batch.sh` and submit it manually with `sbatch batch.sh` to get the most accurate numbers.
 
 Check the program output under `./sbatch`. For example, `sbatch/SLURM-mandelbrot-C2.log` will be the output for the command above, where `mandelbrot` is the kernel name and `C2` means it's run with 2 cores.
 
