@@ -34,7 +34,6 @@ Because multiple users share the cluster, profiling data can be affected by "res
 
 1. Always request `--exclusive` access to a node for final benchmarking.
 2. Use the `--constraint=skylake` flag to ensure your code runs on the intended architecture.
-3. Use the `-p class` flag to ensure your code runs on the intended partition to give you the priority that courses do.
 
 ## Getting started ##
 
@@ -71,7 +70,13 @@ git push --set-upstream origin main
 ```
 By doing this you manually created a fork of the release repository, renamed the original remote to "release", and marked your own remote repository as the upstream. The reason we are not forking GitHub web interface is because a GitHub fork does not allow you to change repository visibility, but your fork needs to be private.
 
-4. The assignment has multiple parts. In order to run each part, you have been provided a Makefile within each directory. To build a program,
+5. If your partner setup the repository and shared it to you, you should set up your local repo (on Adroit) like this.
+```shell
+git clone git@github.com:<THEIR-GITHUB-NAME>/<THEIR-REPO-NAME>.git
+git remote add release https://github.com/princeton-ece476/assignment1
+```
+
+6. The assignment has multiple parts. In order to run each part, you have been provided a Makefile within each directory. To build a program,
 
 ```bash
 cd <dir>
@@ -91,6 +96,10 @@ Once you build the program, you can submit the SLURM jobs for the execution usin
 # For example, mandelbrot with 2 cores, implementation #0.
 ./run.sh prog1_mandelbrot_threads mandelbrot 2 "-t 2 -i 0"
 ```
+
+The `run.sh` script generates (or overwrites) `batch.sh` under the same directory, then submits this job to the cluster using `sbatch batch.sh`. You should take a look at `batch.sh` - There are plenty of cases where you will want to modify it yourself. You can manually submit a batch job with `sbatch batch.sh`.
+
+The `run.sh`-generated script does not add `--exclusive` - It is not recommended to use `--exclusive` when debugging, only when preparing for final submission. Once you are happy with your program, add `#SBATCH --exclusive` to `batch.sh` and submit it manually with `sbatch batch.sh` to get the most accurate numbers.
 
 Check the program output under `./sbatch`. For example, `sbatch/SLURM-mandelbrot-C2.log` will be the output for the command above, where `mandelbrot` is the kernel name and `C2` means it's run with 2 cores.
 
@@ -112,7 +121,7 @@ Your job is to parallelize the computation of the images using [std::thread](htt
 2. Extend your code to use 2, 3, 4, 5, 6, 7, 8, 12, 16, 24 and 32 threads, partitioning the image generation work accordingly (threads should get blocks of the image). Note that you need to make sure to "ask" for the required cores while submitting the Slurm job. In your write-up, produce a graph of __speedup compared to the reference sequential implementation__ as a function of the number of threads used __FOR VIEW 1__. Is the speedup linear in the number of threads used? In your writeup hypothesize why this is (or is not) the case? (you may also wish to produce a graph for VIEW 2 to help you come up with a good answer. Hint: take a careful look at the three-thread datapoint.)
 3. To confirm (or disprove) your hypothesis, look at the time each thread requires to complete its work (from the inserted timing code at the beginning and end of `workerThreadStart()`). How do your measurements explain the speedup graph you previously created?
 4. Modify the mapping of work to threads to achieve to improve speedup to at __about 30-32x on both views__ of the Mandelbrot set (if you're above 30x that's fine, don't sweat it). Specifically, implement `workerThreadStart_v2()` (and run using `-i 1`). You may not use any synchronization between threads in your solution. We are expecting you to come up with a single work decomposition policy that will work well for all thread counts---hard coding a solution specific to each configuration is not allowed! (Hint: There is a very simple static assignment that will achieve this goal, and no communication/synchronization among threads is necessary.). In your writeup, describe your approach to parallelization and report the final 32-thread speedup obtained. 
-5. Now run your improved code with 64 threads. Is performance noticably greater than when running with eight threads? Why or why not? 
+5. Now run your improved code with 64 threads. Is performance noticably greater than when running with eight threads? Why or why not? **Note:** When running this experiment, you may need to manually modify your `batch.sh`: Change `#SBATCH --constraint=skylake` `#SBATCH --constraint=ice`. The Skylake machines in Adroit cluster have up to 32 cores, while the Icelake machines have 64. You should compare both 32-thread performance and 64-thread performance on Icelake machines.
 
 As a reminder - Your starter code had a switch for multiple implementations (`-i 0` or `-i 1`), which calls into `workerThreadStart_v1()` and `workerThreadStart_v2()` in `mandelbrotThread.cpp` respectively, see `mandelbrotThread.cpp` for more details. This is to make it easy for you and us to compare different implementations. When grading, we will look at both the implementations. Also, make sure to scale the cores according to the maximum possible speedup expected.
 

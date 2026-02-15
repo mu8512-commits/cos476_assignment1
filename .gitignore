@@ -9,4 +9,5 @@ logs/
 *.log
 *.dat
 *.png
+.vscode
 prog4_sqrt/sqrt

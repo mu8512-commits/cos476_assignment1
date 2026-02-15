@@ -7,6 +7,6 @@
 #SBATCH --cpus-per-task=2
 #SBATCH --job-name=mandelbrot-C2-T1-K0-O0
 #SBATCH --distribution=block:block
-#SBATCH --constraint=ice
+#SBATCH --constraint=skylake
 ./mandelbrot -t 4 -v 2 2> logs/mandelbrot-C2-T1-K0-O0.log
 lscpu 2> logs/mandelbrot-C2-T1-K0-O0.log
