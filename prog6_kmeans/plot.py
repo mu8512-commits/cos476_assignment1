@@ -6,8 +6,10 @@ from sklearn.decomposition import PCA
 
 START_LOGFILE = "./start.log"
 END_LOGFILE = "./end.log"
-START_PLOTFILE = "./start.png"
-END_PLOTFILE = "./end.png"
+#START_PLOTFILE = "./start1.png"
+#END_PLOTFILE = "./end1.png"
+START_PLOTFILE = "./start2.png"
+END_PLOTFILE = "./end2.png"
 
 for title, logfile, plotfile in [("Start", START_LOGFILE, START_PLOTFILE), ("End", END_LOGFILE, END_PLOTFILE)]:
 

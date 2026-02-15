@@ -3,8 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <thread>
-
-#include "CycleTimer.h"
+#include "timeit.h"
 
 using namespace std;
 
@@ -18,6 +17,7 @@ typedef struct {
   int *clusterAssignments;
   double *currCost;
   int M, N, K;
+  int numThreads =0; 
 } WorkerArgs;
 
 
@@ -53,7 +53,7 @@ static bool stoppingConditionMet(double *prevCost, double *currCost,
  * @param nDim The dimensionality (number of elements) in each data point
  *     (must be the same for x and y).
  */
-double dist(double *x, double *y, int nDim) {
+double dist(const double *x, const double *y, int nDim) {
   double accum = 0.0;
   for (int i = 0; i < nDim; i++) {
     accum += pow((x[i] - y[i]), 2);
@@ -151,6 +151,63 @@ void computeCost(WorkerArgs *const args) {
   delete[] accum;
 }
 
+void computeAssignments2(WorkerArgs *const args) {
+  const int M = args->M;
+  const int N = args->N;
+  const int K = args->K;
+
+  const double *data = args->data;
+  const double *centroids = args->clusterCentroids;
+  int *assign = args->clusterAssignments;
+
+  int T = args->numThreads;
+  if (T <= 0) T = 1;
+  if (T > M) T = M;  // don't spawn more threads than work items
+
+  auto worker = [&](int mStart, int mEnd) {
+    for (int m = mStart; m < mEnd; ++m) {
+      const double *x = &data[m * N];
+
+      int bestK = 0;
+      double bestD = 1e300;
+
+      for (int k = 0; k < K; ++k) {
+        const double *c = &centroids[k * N];
+
+        // Use the original distance function
+        double d = dist(x, c, N);
+
+        if (d < bestD) {
+          bestD = d;
+          bestK = k;
+        }
+      }
+
+      assign[m] = bestK;
+    }
+  };
+
+  // static block partition over m
+  std::thread *threads = new std::thread[T - 1];
+  int block = (M + T - 1) / T;
+
+  for (int t = 0; t < T - 1; ++t) {
+    int s = t * block;
+    int e = std::min(M, s + block);
+    threads[t] = std::thread(worker, s, e);
+  }
+  // main thread handles last block
+  int s = (T - 1) * block;
+  int e = std::min(M, s + block);
+  worker(s, e);
+
+  for (int t = 0; t < T - 1; ++t) {
+    threads[t].join();
+  }
+  delete[] threads;
+}
+
+
 /**
  * Computes the K-Means algorithm, using std::thread to parallelize the work.
  *
@@ -188,6 +245,8 @@ void kMeansThread(double *data, double *clusterCentroids, int *clusterAssignment
   args.M = M;
   args.N = N;
   args.K = K;
+  args.numThreads = (int)std::thread::hardware_concurrency();
+  if (args.numThreads <= 0) args.numThreads = 4; // safe fallback
 
   // Initialize arrays to track cost
   for (int k = 0; k < K; k++) {
@@ -197,6 +256,10 @@ void kMeansThread(double *data, double *clusterCentroids, int *clusterAssignment
 
   /* Main K-Means Algorithm Loop */
   int iter = 0;
+  double totalAssignTime = 0; 
+  double totalCentroidTime = 0; 
+  double totalCostTime = 0; 
+
   while (!stoppingConditionMet(prevCost, currCost, epsilon, K)) {
     // Update cost arrays (for checking convergence criteria)
     for (int k = 0; k < K; k++) {
@@ -206,13 +269,22 @@ void kMeansThread(double *data, double *clusterCentroids, int *clusterAssignment
     // Setup args struct
     args.start = 0;
     args.end = K;
+    
+    totalAssignTime += timeItNS("computeAssignments", false, computeAssignments2, &args);
+    totalCentroidTime += timeItNS("computeCentroids", false, computeCentroids, &args);
+    totalCostTime += timeItNS("computeCost", false, computeCost, &args);
 
-    computeAssignments(&args);
-    computeCentroids(&args);
-    computeCost(&args);
+    //computeAssignments2(&args);
+    //computeAssignments(&args);
+    //computeCentroids(&args);
+    //computeCost(&args);
 
     iter++;
   }
+
+  printf("Total Time Spent Assignment: %f [ms] \n", totalAssignTime / 1e6); 
+  printf("Total Time Spent Centroids: %f [ms] \n", totalCentroidTime/ 1e6); 
+  printf("Total Time Spent Costs: %f [ms] \n", totalCostTime/ 1e6); 
 
   delete[] currCost;
   delete[] prevCost;

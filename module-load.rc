@@ -4,3 +4,4 @@ export MODULEPATH=/scratch/network/zl1111/ece476-public/modulefiles:$MODULEPATH
 # 2. Load the corresponding modules. You can add this to your .bashrc if you understand the implications.
 module load gcc/15.2.0
 module load intel-ispc/latest
+module list -a

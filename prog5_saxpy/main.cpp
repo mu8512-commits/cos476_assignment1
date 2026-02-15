@@ -42,6 +42,7 @@ int main() {
     float* resultSerial = new float[N];
     float* resultISPC = new float[N];
     float* resultTasks = new float[N];
+    // float* resultStoreTasks = new float[N]; 
 
     // initialize array values
     for (unsigned int i=0; i<N; i++)
@@ -51,6 +52,7 @@ int main() {
         resultSerial[i] = 0.f;
         resultISPC[i] = 0.f;
         resultTasks[i] = 0.f;
+        // resultStoreTasks[i] = 0.0f; 
     }
 
     //
@@ -110,11 +112,33 @@ int main() {
     //printf("\t\t\t\t(%.2fx speedup from ISPC)\n", minSerial/minISPC);
     //printf("\t\t\t\t(%.2fx speedup from task ISPC)\n", minSerial/minTaskISPC);
 
+    // //
+    // // Run the ISPC Streaming Store (multi-core) implementation
+    // //
+    // double minStreamingStoreTaskISPC = 1e30;
+    // for (int i = 0; i < 3; ++i) {
+    //     double startTime = CycleTimer::currentSeconds();
+    //     saxpy_ispc_streaming_store_withtasks(N, scale, arrayX, arrayY, resultStoreTasks);
+    //     double endTime = CycleTimer::currentSeconds();
+    //     minStreamingStoreTaskISPC = std::min(minStreamingStoreTaskISPC, endTime - startTime);
+    // }
+    // printf("End\n"); 
+
+    // verifyResult(N, resultStoreTasks, resultSerial);
+
+    // printf("[saxpy streaming store task ispc]:\t[%.3f] ms\t[%.3f] GB/s\t[%.3f] GFLOPS\n",
+    //        minStreamingStoreTaskISPC * 1000,
+    //        toBW(TOTAL_BYTES, minStreamingStoreTaskISPC),
+    //        toGFLOPS(TOTAL_FLOPS, minStreamingStoreTaskISPC));
+
+    // printf("\t\t\t\t(%.2fx speedup from use of tasks)\n", minISPC/minStreamingStoreTaskISPC);
+
     delete[] arrayX;
     delete[] arrayY;
     delete[] resultSerial;
     delete[] resultISPC;
     delete[] resultTasks;
+    // delete[] resultStoreTasks;
 
     return 0;
 }

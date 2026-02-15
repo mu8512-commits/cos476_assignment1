@@ -1,0 +1,151 @@
+2) Explain the performance (why it behaves this way)
+Key point: saxpy is memory-bandwidth bound
+
+Each element does only 2 FLOPs (mul+add), but it moves a lot of bytes:
+
+load X[i] = 4 bytes
+
+load Y[i] = 4 bytes
+
+store result[i] = at least 4 bytes (and more in practice because of cache behavior; see extra credit)
+
+So operational intensity is very low:
+
+OI
+≈
+2
+ flops
+12
+ bytes
+≈
+0.167
+ flops/byte
+OI≈
+12 bytes
+2 flops
+
+≈0.167 flops/byte
+
+That’s tiny — so you hit the memory bandwidth ceiling long before you hit peak compute.
+
+What ISPC without tasks does
+
+Speeds up the single core mainly via SIMD vectorization and cleaner loops.
+
+But it’s still just one core feeding memory.
+
+What ISPC with tasks does
+
+Uses multiple cores, so aggregate memory request rate rises.
+
+You get a speedup until you saturate DRAM bandwidth.
+
+After saturation, adding more cores doesn’t help much, so speedup is sublinear (often far from linear).
+
+So the explanation is:
+
+regular access + trivially parallel,
+
+but global throughput is limited by memory bandwidth, not compute.
+
+===================================================================
+
+3) “Can it be substantially improved? Near linear speedup: Yes/No?”
+
+Answer: No, not near-linear in cores (beyond a few cores).
+
+Justification (what graders want):
+
+This kernel streams through ~hundreds of MB (here N=20M → arrays are huge).
+
+Once DRAM bandwidth is saturated, more parallelism can’t reduce time.
+
+So you’ll see speedup rising at first, then flattening.
+
+“Near linear speedup” would require the workload to be compute-bound or to reduce memory traffic per element — which you basically can’t for saxpy (you must read X and Y and write result).
+
+You can improve a bit, but not to “linear scaling to all cores” unless the baseline was very poorly implemented.
+
+===================================================================
+
+Extra Credit (1 pt): Why is TOTAL_BYTES = 4 * N * sizeof(float) correct?
+
+Even though you “logically” do:
+
+read X (4N)
+
+read Y (4N)
+
+write result (4N)
+
+you end up with an extra 4N bytes because of how caches handle stores:
+
+Write-allocate / Read-For-Ownership (RFO)
+
+On most CPUs, a store to result[i] first brings the cache line into cache (unless you use special streaming stores). That means the store triggers a read of the cache line from memory (RFO) before it can be modified, even if you’re going to overwrite it completely.
+
+So memory traffic becomes:
+
+X load: 4N
+
+Y load: 4N
+
+result RFO read: 4N
+
+result writeback: 4N
+
+Total = 16N bytes = 4 * N * sizeof(float) (since sizeof(float)=4).
+
+That’s exactly what the code uses.
+
+(Perfect one-liner for your writeup: “Stores incur a read-for-ownership due to write-allocate, so result costs ~8 bytes/element (read + write), not 4.”)
+
+===================================================================
+
+xtra Credit (performance): How to significantly speed up saxpy
+
+If you already saturate bandwidth, you can’t magically go faster than peak DRAM BW — but there is one big lever:
+
+✅ Use streaming / non-temporal stores to avoid the RFO
+
+If result is not reused soon, you should store it using non-temporal (streaming) stores, which bypass (or minimize) cache pollution and avoid the RFO read.
+
+Effect:
+
+result traffic drops from 8 bytes/elem → 4 bytes/elem
+
+total traffic drops from 16 bytes/elem → 12 bytes/elem
+
+that’s up to a theoretical 16/12 = 1.33× improvement if you were bandwidth-bound.
+
+That’s not “just a few percent” — it can be noticeable.
+
+In ISPC, the concept is usually:
+
+ensure alignment
+
+use an ISPC intrinsic / “streaming store” (depending on the version / target)
+
+or rely on compiler/flags if supported (less reliable)
+
+Other smaller but real improvements
+
+Ensure arrays are aligned (e.g., 64-byte) and use aligned loads/stores.
+
+Tune task granularity to reduce overhead (large contiguous chunks per task).
+
+Pin threads / avoid oversubscription (depends on your environment).
+
+Make sure compiler flags enable AVX2/AVX-512 appropriately.
+
+What is “best possible” on these systems?
+
+Best possible looks like:
+
+ISPC+tasks reaches close to sustained STREAM bandwidth of the machine (often a large fraction of peak).
+
+With streaming stores, you might get closer to that limit because you reduce wasted traffic.
+
+So your best-possible claim should be phrased as:
+
+“A best implementation is bandwidth-limited and should approach the system’s sustainable DRAM bandwidth (STREAM-like). Further gains beyond that are not possible without reducing bytes moved per element.”
