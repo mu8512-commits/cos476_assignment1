@@ -47,7 +47,7 @@ int main() {
 
         // This is the worst utility. 
         // ispc means that we that of the instances wait for each other in one core 
-        // if ((i % 8) == 0) values[i] = 2.999f;  // slowest (near 3)
+        // if ((i % 8) == 0) values[i] = 2.999999f;  // slowest (near 3)
         // else              values[i] = 1.0f;    // fastest (near 1)
     }
 

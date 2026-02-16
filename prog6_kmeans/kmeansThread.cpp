@@ -272,7 +272,8 @@ void kMeansThread(double *data, double *clusterCentroids, int *clusterAssignment
     args.start = 0;
     args.end = K;
     
-    totalAssignTime += timeItNS("computeAssignments", false, computeAssignments2, &args);
+    totalAssignTime += timeItNS("computeAssignmentsMultiThread", false, computeAssignments2, &args);
+    // totalAssignTime += timeItNS("computeAssignments", false, computeAssignments, &args);
     totalCentroidTime += timeItNS("computeCentroids", false, computeCentroids, &args);
     totalCostTime += timeItNS("computeCost", false, computeCost, &args);
 
